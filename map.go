@@ -30,7 +30,7 @@ type Item[V any] struct {
 	lastUse time.Time
 }
 
-type TimeoutMap[K Hashable, V any] struct {
+type TimingoutMap[K Hashable, V any] struct {
 	lock    *sync.Mutex
 	store   map[K]*Item[V]
 	timeout time.Duration
@@ -40,8 +40,8 @@ type TimeoutMap[K Hashable, V any] struct {
 var ErrNotFound = errors.New("not found")
 var ErrExpired = errors.New("expired")
 
-func New[K Hashable, V any](timeout time.Duration, renew bool) *TimeoutMap[K, V] {
-	return &TimeoutMap[K, V]{
+func New[K Hashable, V any](timeout time.Duration, renew bool) *TimingoutMap[K, V] {
+	return &TimingoutMap[K, V]{
 		lock:    &sync.Mutex{},
 		timeout: timeout,
 		renew:   renew,
@@ -49,15 +49,15 @@ func New[K Hashable, V any](timeout time.Duration, renew bool) *TimeoutMap[K, V]
 	}
 }
 
-func NewWithMutex[K Hashable, V any](lock *sync.Mutex, timeout time.Duration, renew bool) *TimeoutMap[K, V] {
-	return &TimeoutMap[K, V]{
+func NewWithMutex[K Hashable, V any](lock *sync.Mutex, timeout time.Duration, renew bool) *TimingoutMap[K, V] {
+	return &TimingoutMap[K, V]{
 		lock:    lock,
 		timeout: timeout,
 		renew:   renew,
 		store:   make(map[K]*Item[V]),
 	}
 }
-func (m *TimeoutMap[K, V]) Get(key K) (V, error) {
+func (m *TimingoutMap[K, V]) Get(key K) (V, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	var none V
@@ -74,7 +74,7 @@ func (m *TimeoutMap[K, V]) Get(key K) (V, error) {
 	}
 	return item.value, ErrExpired
 }
-func (m *TimeoutMap[K, V]) GetOrNew(key K, fallback V) V {
+func (m *TimingoutMap[K, V]) GetOrNew(key K, fallback V) V {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	item, found := m.store[key]
@@ -92,7 +92,7 @@ func (m *TimeoutMap[K, V]) GetOrNew(key K, fallback V) V {
 	m.store[key] = item
 	return fallback
 }
-func (m *TimeoutMap[K, V]) SetOrReplace(key K, value V) (V, error) {
+func (m *TimingoutMap[K, V]) SetOrReplace(key K, value V) (V, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -101,19 +101,19 @@ func (m *TimeoutMap[K, V]) SetOrReplace(key K, value V) (V, error) {
 	return value, nil
 }
 
-func (m *TimeoutMap[K, V]) Clear() {
+func (m *TimingoutMap[K, V]) Clear() {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	m.store = make(map[K]*Item[V])
 }
 
-func (m *TimeoutMap[K, V]) SetTimeout(duration time.Duration) {
+func (m *TimingoutMap[K, V]) SetTimeout(duration time.Duration) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	m.timeout = duration
 }
 
-func (m *TimeoutMap[K, V]) CleanDead() {
+func (m *TimingoutMap[K, V]) CleanDead() {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	for key, item := range m.store {
