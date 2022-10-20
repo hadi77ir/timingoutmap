@@ -1,5 +1,5 @@
 # timingoutmap
-A simple implementation of timed LRU map with entries having a timeout, enabling periodical cleanups.
+A simple implementation of synchronized map with entries having a timeout, enabling periodical cleanups.
 
 ## Installation
 ```
